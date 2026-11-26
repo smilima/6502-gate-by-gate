@@ -191,3 +191,14 @@ clean:
 
 .PHONY: test board program listing disassembly term maze characters clean
 .PRECIOUS: $(BUILD)/%_tb.vvp $(BUILD)/%.json $(BUILD)/%_pnr.json $(BUILD)/%.o $(BUILD)/%.bin
+
+# Connect the board to WSL. Needed after every unplug, reboot or wsl --shutdown.
+# BUSID is the USB port the board is plugged into (see: usbipd list).
+USBIPD = "/mnt/c/Program Files/usbipd-win/usbipd.exe"
+BUSID ?= 2-5
+attach:
+	@if lsusb | grep -q 0403:6010; then \
+		echo "Board is already attached to WSL."; \
+	else \
+		$(USBIPD) attach --wsl --busid $(BUSID) && sleep 1; \
+	fi

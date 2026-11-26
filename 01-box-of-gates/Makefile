@@ -35,3 +35,14 @@ clean:
 
 .PHONY: gate gates blink clean
 .PRECIOUS: $(BUILD)/%.json $(BUILD)/%_pnr.json
+
+# Connect the board to WSL. Needed after every unplug, reboot or wsl --shutdown.
+# BUSID is the USB port the board is plugged into (see: usbipd list).
+USBIPD = "/mnt/c/Program Files/usbipd-win/usbipd.exe"
+BUSID ?= 2-5
+attach:
+	@if lsusb | grep -q 0403:6010; then \
+		echo "Board is already attached to WSL."; \
+	else \
+		$(USBIPD) attach --wsl --busid $(BUSID) && sleep 1; \
+	fi
