@@ -154,12 +154,20 @@ clean:
 .PRECIOUS: $(BUILD)/%_tb.vvp $(BUILD)/%.json $(BUILD)/%_pnr.json $(BUILD)/%.o $(BUILD)/%.bin
 
 # Connect the board to WSL. Needed after every unplug, reboot or wsl --shutdown.
-# BUSID is the USB port the board is plugged into (see: usbipd list).
+# The board is found by its USB ID (VID:PID), so any USB port works.
 USBIPD = "/mnt/c/Program Files/usbipd-win/usbipd.exe"
-BUSID ?= 2-5
+HWID ?= 0403:6010
+ATTACH_TIMEOUT ?= 4
 attach:
-	@if lsusb | grep -q 0403:6010; then \
+	@if lsusb | grep -q $(HWID); then \
 		echo "Board is already attached to WSL."; \
 	else \
-		$(USBIPD) attach --wsl --busid $(BUSID) && sleep 1; \
+		timeout $(ATTACH_TIMEOUT) $(USBIPD) attach --wsl --hardware-id $(HWID); rc=$$?; \
+		if [ $$rc -eq 124 ]; then \
+			/mnt/c/Windows/System32/wsl.exe -u root -e pkill -f '^\./usbip attach'; \
+			echo "Attach timed out after $(ATTACH_TIMEOUT) s. A Windows program may be holding the board."; \
+			exit 1; \
+		fi; \
+		[ $$rc -eq 0 ] || exit $$rc; \
+		sleep 1; \
 	fi
